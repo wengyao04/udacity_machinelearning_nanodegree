@@ -1,1 +1,1 @@
-# udacity_machinelearning_nanodegree
+# udacity machinelearning nanodegree projects
