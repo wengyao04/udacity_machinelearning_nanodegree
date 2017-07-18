@@ -254,9 +254,18 @@ Convolutional neural network (CNN) has demonstrated excellent performance on man
 \end{Figure}
 
 \subsection{Transfer Learning}
-Transfer learning involves taking a pre-trained neural network and adapting the neural network to a new different data set and thus accelerate our deep learning model.There are two major methods in transfer learning: retraining and fine tuning, depending on the size of new data set and the similarity of new data to the original data. The amazon satellite image data set is not big, however, is different from ImageNet which used to train Inception v3, VGG16 etc. In this capstone project, I will apply transfer learning using Inception v3. I will modify the last fully-connected layer in shape of $1\times1\times17$, where $17$ is the total number of classes of amazon images. Freeze all the weights from the pre-trained networks except the last layer, retrain the network to update the weights of the new fully connected layer.
+Transfer learning involves taking a pre-trained neural network and adapting the neural network to a new different data set and thus accelerate our deep learning model.There are two major methods in transfer learning: retraining and fine tuning, depending on the size of new data set and the similarity of new data to the original data. The amazon satellite image data set is not big, however, is different from ImageNet which used to train InceptionV3, VGG16 etc. In this capstone project, I will apply transfer learning on InceptionV3 in the following steps
 
-
+\begin{itemize}
+\item Use opencv to read images, and divide each pixel by 255 to make them in range $[0, 1]$
+\item Split the labeled dataset, $80\%$ as training and $20\%$ as testing
+\item Load InceptionV3 model from keras and pop up the final layers. Use a fully-connected layer in shape of $1\times1\times17$ as the final layer, where $17$ is the total number of classes of amazon images
+\item Use ImageDataGenerator of keras to generate batches of augmented tensor image in realtime training. I will try random rotation, and random horizontal/vertical shifts. 
+\item Choose Adam optimizer\cite{adam} to minimize the loss fuction Eq.\ref{eq:loss}.
+\item Initial weights of InceptionV3 are from training ImageNet. I will freeze all initial weights except those in the last fully connected layer, retrain the network to update them and save the checkpoint. I will save the plot of loss vs number of epochs, and choose a proper epoch number to avoid overfitting. Another choice is to use EarlyStopping in keras to stop training when validation loss isn't decreasing anymore.
+\item Fit testing data using saved model and calculate mean $F_2$ score.
+\item Apply fine tuning on the retrained model, update weights of all layers and save the model. Compare mean $F_2$ score from using fine tuning model with that from retrained model. 
+\end{itemize}
 
 
 %% appendix sections are then done as normal sections
@@ -272,10 +281,10 @@ Transfer learning involves taking a pre-trained neural network and adapting the 
 %%   \cite{key}          ==>>  [#]
 %%   \cite[chap. 2]{key} ==>>  [#, chap. 2]
 %%   \citet{key}         ==>>  Author [#]
-
+\end{multicols}
 %% References with bibTeX database:
 %\bibliography{mybib}{}
-\bibliographystyle{plain}{}
+\bibliographystyle{unsrt}{}
 \bibliography{sample}
 
 %% Authors are advised to submit their bibtex database files. They are
@@ -293,8 +302,6 @@ Transfer learning involves taking a pre-trained neural network and adapting the 
 % \bibitem{}
 
 % \end{thebibliography}
-
-\end{multicols}
 \end{document}
 
 %%
