@@ -241,19 +241,26 @@ Binary cross entropy function is used as loss function Eq.~\ref{eq:loss},
 where $i$ sums over all samples and $j$ sums over all classes, $y$ is the sample label and $p_{ij}\in(0,1)$,$\sum_{j} p_{ij} = 1 \forall i, j$ is the prediction for a sample.
 
 \subsection{Measurement Metrics}
-Evaluation of multi-label algorithm is hard mostly because of partial correctness of a prediction. One trivial way around is to ignore partially correctness and extend the accuracy used in single label case for multi-label prediction, see Eq.~\ref{eq:accuracy}
+Evaluation of multi-label algorithm is hard mostly because of partial correctness of a prediction. One trivial way around is to ignore partially correctness and extend the accuracy used in single label case for multi-label prediction, see Eq.~\ref{eq:accuracy}. It represents the average percentage matching among $17$ labels.
 \begin{equation}
-\mathrm{accuracy} = \frac{1}{N}\sum^{N}_{i = 1}\mathcal{I}(y^i = y^i_{\mathrm{pred}})\label{eq:accuracy}
+\mathrm{accuracy} = \frac{1}{N}\sum^{N}_{i = 1}\mathcal{I}(y^i = y^i_{\mathrm{pred}})\label{eq:accuracy}.
 \end{equation}
 
-In this kaggle competition, the $F_2$ score is used to evaluate the submission, see Eq.\ref{eq:f2}
+In this kaggle competition, submissions are evaluated by mean $F_2$ score, see Eq.~\ref{eq:f2},
 \begin{equation}
-F_{2} = (1+\beta^{2})\frac{pr}{\beta^2 p + r}, \quad \beta = 2 \label{eq:f2}
+F_{2} = (1+\beta^{2})\frac{pr}{\beta^2 p + r}, \quad \beta = 2 \label{eq:f2}.
 \end{equation}
-where Precision $p$ is the ratio of true positives to all predicted positives. Recall $r$ is the ratio of true positives to all actual positives. $F_2$ weights recall higher than precision, the mean $F_2$ score is formed by averaging the individual $F_2$ scores for each row in the test data. 
+Precision $p$ is the ratio of true positives to all predicted positives (true positive + false positve), and recall $r$ is the ratio of true positives to all actual positives (true positie + false negative), where
+\begin{itemize}
+\item True positive:  $\mathrm{label}_i$ is correctly identified as $\mathrm{label}_i$
+\item False positive: $\mathrm{label}_j$ is incorrectly identified as $\mathrm{label}_i$ ($i\neq j$)
+\item True negative:  $\mathrm{label}_j$ is not indentified as $\mathrm{label}_i$ ($i\neq j$)
+\item False negative: $\mathrm{label}_i$ is not identified as $\mathrm{label}_i$
+\end{itemize}
+$F_2$ weights recall higher than precision, because we would rather predicate a false alarm of deforestation than fail to detect a real one. The mean $F_2$ score is formed by averaging the individual $F_2$ scores for each row in the test data. 
 
 \subsection{Baseline Model}
-Convolutional neural network (CNN) has demonstrated excellent performance on many complex visual tasks. CNN architecture has three major components:
+Convolutional neural network (CNN) has demonstrated excellent performance on many complex visual tasks. Compared with regular neural network, CNN has layers not connecting to every single pixel of the input image. It learns an image from the combination of features like, edges, shape, corner, color \emph{etc.} We call these features as filters, and each filter only learns its neighbor in a small range. CNN has 3 major components:
 \begin{itemize}
 \item  Convolution layer: we slide the filters (weight matrices) over the complete image, and minimize the loss function to learn the weights. The filters contain features extracted from the original image, for example, one filter might learn edge and another one learn shape \emph{etc.} In general, the initial layer extract more generic features, when network goes deeper, the filters will learn more complex features. 
 \item Pooling or Sub Sampling: we reduces the dimensionality of weight matrices but retains the most important information. There are different spatial pooling types: max, average, sum \emph{etc}.
@@ -262,15 +269,16 @@ Convolutional neural network (CNN) has demonstrated excellent performance on man
 
 My baseline model is a two layers of CNN with three fully connected  layers. Each fully connected layer is followed by a pooling layers with drop probability $0.3$. Early stopping is used as regularization to avoid overfitting. Fig.~\ref{fig:cnngraph} shows the architecture of baseline CNN. Data is trained in $31$ epochs with batch size of $128$. Fig.~\ref{fig:baseline_metrics} shows accuracy, loss and $F_2$ score over $31$ training epochs, where the tagging threshold of prediction is $0.5$. However, multi-label is different from single label classification, in single label classification, we select label with highest score as prediction. In multi-label classification, the threshold for each label might be different, thus, I tune the label threshold to optimize $F_2$ of each label over the training data. For each label, I calculate $F_2$ scores using $20$ different thresholds that evenly spaced in range $[0.01, 0.99]$, then pick the one which maximizes the $F_2$ score.
 
+\newpage
 \begin{multicols}{2}
 \begin{Figure}
  \centering
- \includegraphics[width=0.4\linewidth, height=0.9\linewidth]{baseline_model.png}
+ \includegraphics[width=0.4\linewidth, height=0.8\linewidth]{baseline_model.png}
  \captionof{figure}{Tensorboard: baseline CNN architecture.}\label{fig:cnngraph}
 \end{Figure}
 \begin{Figure}
  \centering
- \includegraphics[width=0.7\linewidth]{train_9252.jpg}
+ \includegraphics[width=0.6\linewidth]{train_9252.jpg}
  \captionof{figure}{True Label: agriculture clear habitation primary road water. \newline Prediction: agriculture clear habitation primary road}\label{fig:train9252}
 \end{Figure}
 \end{multicols}
@@ -281,9 +289,8 @@ My baseline model is a two layers of CNN with three fully connected  layers. Eac
  \captionof{figure}{Accuracy, loss and $F_2$ score in each epoch}\label{fig:baseline_metrics}
 \end{Figure}
 
-Tab.~\ref{tab:baseline_f2} compares $F_2$ from using fixed threshold $0.5$ with those from using optimized threshold, which are improved especially for rare features. I submit the predictions using baseline model, $F_2$ score is $0.82752$ and $0.87329$ for using fixed threshold and optimized threshold respectively. (Tab.~\ref{tab:conclusion} lists the $F_2$ of training/testing data), sample submission benchmark from Kaggle is $0.67485$. 
-
 \begin{table}[ht]
+\scriptsize
 \begin{tabular}{l|c|c|c|c|c|c}
 \hline
 \hline
@@ -309,6 +316,7 @@ blow down         & 0.5  & 0.0    & 0.0    & 0.0100  & 0.1123 & 0.0812 \\ \hline
 \caption{Baseline model: label tagging threshold, and label $F_2$ score of training/testing}\label{tab:baseline_f2}
 \end{table}
 
+Tab.~\ref{tab:baseline_f2} compares $F_2$ from using fixed threshold $0.5$ with those from using optimized threshold, which are improved especially for rare features. I submit the predictions using baseline model, $F_2$ score is $0.82752$ and $0.87329$ for using fixed threshold and optimized threshold respectively. (Tab.~\ref{tab:conclusion} lists the $F_2$ of training/testing data), sample submission benchmark from Kaggle is $0.67485$. 
 
 \subsection{Transfer Learning}
 Transfer learning involves taking a pre-trained neural network and adapting the neural network to a new different data set and thus accelerate our deep learning model. There are two major methods in transfer learning: retraining and fine tuning, depending on the size of new data set and the similarity of new data to the original data. There are four main cases, see Tab.~\ref{tab:transfer}.
@@ -377,7 +385,7 @@ The amazon satellite image data set is medium, however, is different from ImageN
 \end{figure}
 \begin{Figure}
  \centering
- \includegraphics[width=1.\linewidth, height=0.33\linewidth]{inception_metrics.pdf}
+ \includegraphics[width=1.\linewidth, height=0.35\linewidth]{inception_metrics.pdf}
  \captionof{figure}{Transfer learning: accuracy, loss and $F_2$ score in each epoch}\label{fig:inception_metrics}
 \end{Figure}
 
@@ -387,7 +395,7 @@ Fig.~\ref{fig:inception_finetune_metrics} shows an improvement of accuracy, loss
 
 \begin{Figure}
  \centering
- \includegraphics[width=1.\linewidth, height=0.33\linewidth]{inception_finetune_metrics.pdf}
+ \includegraphics[width=1.\linewidth, height=0.35\linewidth]{inception_finetune_metrics.pdf}
  \captionof{figure}{Fine tuning InceptionV3: accuracy, loss and $F_2$ score in each epoch}\label{fig:inception_finetune_metrics}
 \end{Figure}
 
@@ -425,8 +433,12 @@ blow down          & 0.11316 & 0.4669 & 0.3901 \\ \hline
  \captionof{figure}{Fine tuning InceptionV3: confusion matrices of labels calculated with testing data.}\label{fig:label_cf}
 \end{Figure}
 
-\subsection{Conclusion}
-Tab.~\ref{tab:conclusion} shows the $F_2$ scores of training/testing data and final submission of unlabeled data using baseline model and fine tuning InceptionV3. $F_2$ score is improved by $\sim5\%$ when using transfer learning on InceptionV3. However it is still behind the highest $F_2$ score $0.93318$ in Kaggle lead board. Fig.~\ref{fig:label_cf} shows label confusion matrices calculated using testing data. For rare features, like 'bare ground', 'blooming' and 'selective logging', false negative is relatively large, indicating that my model is more likely to predicate false for rate features.
+\section{Conclusion}
+\subsection{Justification}
+Tab.~\ref{tab:conclusion} shows the $F_2$ scores of training/testing data and final submission of unlabeled data using baseline model and fine tuning InceptionV3. $F_2$ score is improved by $\sim5\%$ when using transfer learning on InceptionV3, which demonstrates the power of transfer learning using deep CNN. My model provides a good prediction ($F_2$ is around $90\%$) of common features like 'primary', 'clear', 'cloudy', and a relatively good prediction ($F_2$ is around $80\%$) of some potential deforestation sign like 'agriculture', 'habitation' 'road'.
+
+\subsection{Reflection}
+However it is still behind the highest $F_2$ score $0.93318$ in Kaggle lead board, my rank is $404$ of total $938$ groups. Fig.~\ref{fig:label_cf} shows label confusion matrices calculated using testing data. For rare features, like 'bare ground', 'blooming' and 'selective logging', false negative is relatively large, it indicates that my model is more likely to predicate false for rate features.
 
 \begin{table}[ht]
 \begin{tabular}{l|c|c|c}
@@ -448,6 +460,7 @@ There are several ways to improve this multi-label learning.
 \item Apply ensembing method, which depends on  the  predictive  power of several models to make final prediction. 
 \end{itemize}
 
+This project is my first Kaggle competition, I am excited to explore and optimize different machine learning models. It is a valued experience to leverage what I learned in Machine Learning Nano Degree with the real life problem, and understand the powerful form of machine learning -- 'Deep Learning'.
 %One method is to apply transfer learning on other pre-trained models like ResNet, VGG16, VGG19 \emph{etc.}, and compared the results with InceptionV3. Another potential method is ensembing, which depends on  the  predictive  power of several models to make final prediction. 
 
 %% appendix sections are then done as normal sections
